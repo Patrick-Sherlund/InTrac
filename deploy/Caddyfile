@@ -1,0 +1,35 @@
+{
+	admin off
+}
+
+(intrac) {
+	encode zstd gzip
+	@api path /api /api/*
+	handle @api {
+		reverse_proxy api:8000 {
+			header_up X-Forwarded-Proto {args[0]}
+		}
+	}
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		header Cache-Control "no-cache"
+		file_server
+	}
+}
+
+{$INTRAC_SITE_ADDRESS::80} {
+	{$INTRAC_TLS_DIRECTIVE}
+	import intrac {scheme}
+}
+
+# Tunnel-only listener: never published on the host. Cloudflare terminates TLS.
+:8081 {
+	@insecure header X-Forwarded-Proto http
+	redir @insecure https://{host}{uri} permanent
+	import intrac https
+}
+
+:8082 {
+	respond /healthz "ok" 200
+}

@@ -1,0 +1,9 @@
+# Temporary, free HTTPS URL. Read docs/CLOUDFLARE.md before sharing it.
+services:
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate --url http://web:8081
+    depends_on:
+      web:
+        condition: service_healthy
